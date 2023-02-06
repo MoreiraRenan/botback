@@ -1,0 +1,23 @@
+FROM node:14.16-alpine As development
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm i -g @nestjs/cli
+RUN npm install
+RUN rm -rf dist
+COPY . .
+RUN npm run build
+RUN rm -rf node_modules
+
+# build back e inicia app
+FROM node:14.16-alpine as production
+ARG NODE_ENV=production
+#ENV NODE_ENV=${NODE_ENV}
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install --only=production
+RUN npm install -g pm2 
+RUN apk add curl
+COPY . .
+COPY --from=development /usr/src/app/dist ./dist
+# COPY --from=quasar_build /build/ .
+CMD ["pm2-runtime", "pm2.config.js"]
